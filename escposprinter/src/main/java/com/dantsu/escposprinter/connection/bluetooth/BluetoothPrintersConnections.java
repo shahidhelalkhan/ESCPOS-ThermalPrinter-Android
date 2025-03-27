@@ -33,6 +33,37 @@ public class BluetoothPrintersConnections extends BluetoothConnections {
     }
 
     /**
+     * Connects to a Bluetooth printer with the specified MAC address.
+     *
+     * @param macAddress The MAC address of the printer to connect to.
+     * @return A connected BluetoothConnection if successful, null otherwise.
+     */
+    @Nullable
+    public static BluetoothConnection connectByMacAddress(String macAddress) {
+        if (macAddress == null || macAddress.isEmpty()) {
+            return null;
+        }
+
+        BluetoothPrintersConnections printers = new BluetoothPrintersConnections();
+        BluetoothConnection[] bluetoothPrinters = printers.getList();
+
+        if (bluetoothPrinters != null && bluetoothPrinters.length > 0) {
+            for (BluetoothConnection printer : bluetoothPrinters) {
+                if (printer.getDevice().getAddress().equals(macAddress)) {
+                    try {
+                        return printer.connect();
+                    } catch (EscPosConnectionException e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }
+            }
+        }
+        // No printer with matching MAC address found
+        return null;
+    }
+
+    /**
      * Get a list of bluetooth printers.
      *
      * @return an array of EscPosPrinterCommands

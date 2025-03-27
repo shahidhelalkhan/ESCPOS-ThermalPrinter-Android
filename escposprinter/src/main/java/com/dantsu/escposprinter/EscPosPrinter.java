@@ -207,6 +207,22 @@ public class EscPosPrinter extends EscPosPrinterSize {
         return this;
     }
 
+
+    /**
+     * Open the cash box. Read the README.md for more information about text formatting options.
+     * @return Fluent interface
+     */
+    public EscPosPrinter openCashBox() throws EscPosConnectionException, EscPosParserException, EscPosEncodingException, EscPosBarcodeException {
+        if (this.printer == null || this.printerNbrCharactersPerLine == 0) {
+            return this;
+        }
+
+        this.printer.openCashBox();
+        return this;
+    }
+
+
+
     /**
      * @return Charset encoding
      */

@@ -22,12 +22,17 @@ import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 
+import com.dantsu.escposprinter.EscPosPrinter;
 import com.dantsu.escposprinter.connection.DeviceConnection;
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothConnection;
 import com.dantsu.escposprinter.connection.bluetooth.BluetoothPrintersConnections;
 import com.dantsu.escposprinter.connection.tcp.TcpConnection;
 import com.dantsu.escposprinter.connection.usb.UsbConnection;
 import com.dantsu.escposprinter.connection.usb.UsbPrintersConnections;
+import com.dantsu.escposprinter.exceptions.EscPosBarcodeException;
+import com.dantsu.escposprinter.exceptions.EscPosConnectionException;
+import com.dantsu.escposprinter.exceptions.EscPosEncodingException;
+import com.dantsu.escposprinter.exceptions.EscPosParserException;
 import com.dantsu.escposprinter.textparser.PrinterTextParserImg;
 import com.dantsu.thermalprinter.async.AsyncBluetoothEscPosPrint;
 import com.dantsu.thermalprinter.async.AsyncEscPosPrint;
@@ -104,6 +109,7 @@ public class MainActivity extends AppCompatActivity {
 
     private BluetoothConnection selectedDevice;
 
+    @SuppressLint("MissingPermission")
     public void browseBluetoothDevice() {
         this.checkBluetoothPermissions(() -> {
             final BluetoothConnection[] bluetoothDevicesList = (new BluetoothPrintersConnections()).getList();
@@ -142,21 +148,31 @@ public class MainActivity extends AppCompatActivity {
 
     public void printBluetooth() {
         this.checkBluetoothPermissions(() -> {
-            new AsyncBluetoothEscPosPrint(
-                this,
-                new AsyncEscPosPrint.OnPrintFinished() {
-                    @Override
-                    public void onError(AsyncEscPosPrinter asyncEscPosPrinter, int codeException) {
-                        Log.e("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : An error occurred !");
-                    }
+            try {
+                new AsyncBluetoothEscPosPrint(
+                    this,
+                    new AsyncEscPosPrint.OnPrintFinished() {
+                        @Override
+                        public void onError(AsyncEscPosPrinter asyncEscPosPrinter, int codeException) {
+                            Log.e("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : An error occurred !");
+                        }
 
-                    @Override
-                    public void onSuccess(AsyncEscPosPrinter asyncEscPosPrinter) {
-                        Log.i("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : Print is finished !");
+                        @Override
+                        public void onSuccess(AsyncEscPosPrinter asyncEscPosPrinter) {
+                            Log.i("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : Print is finished !");
+                        }
                     }
-                }
-            )
-                .execute(this.getAsyncEscPosPrinter(selectedDevice));
+                )
+                    .execute(this.getAsyncEscPosPrinter(selectedDevice));
+            } catch (EscPosEncodingException e) {
+                throw new RuntimeException(e);
+            } catch (EscPosBarcodeException e) {
+                throw new RuntimeException(e);
+            } catch (EscPosParserException e) {
+                throw new RuntimeException(e);
+            } catch (EscPosConnectionException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 
@@ -174,21 +190,31 @@ public class MainActivity extends AppCompatActivity {
                     UsbDevice usbDevice = (UsbDevice) intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                         if (usbManager != null && usbDevice != null) {
-                            new AsyncUsbEscPosPrint(
-                                context,
-                                new AsyncEscPosPrint.OnPrintFinished() {
-                                    @Override
-                                    public void onError(AsyncEscPosPrinter asyncEscPosPrinter, int codeException) {
-                                        Log.e("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : An error occurred !");
-                                    }
+                            try {
+                                new AsyncUsbEscPosPrint(
+                                    context,
+                                    new AsyncEscPosPrint.OnPrintFinished() {
+                                        @Override
+                                        public void onError(AsyncEscPosPrinter asyncEscPosPrinter, int codeException) {
+                                            Log.e("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : An error occurred !");
+                                        }
 
-                                    @Override
-                                    public void onSuccess(AsyncEscPosPrinter asyncEscPosPrinter) {
-                                        Log.i("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : Print is finished !");
+                                        @Override
+                                        public void onSuccess(AsyncEscPosPrinter asyncEscPosPrinter) {
+                                            Log.i("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : Print is finished !");
+                                        }
                                     }
-                                }
-                            )
-                                .execute(getAsyncEscPosPrinter(new UsbConnection(usbManager, usbDevice)));
+                                )
+                                    .execute(getAsyncEscPosPrinter(new UsbConnection(usbManager, usbDevice)));
+                            } catch (EscPosEncodingException e) {
+                                throw new RuntimeException(e);
+                            } catch (EscPosBarcodeException e) {
+                                throw new RuntimeException(e);
+                            } catch (EscPosParserException e) {
+                                throw new RuntimeException(e);
+                            } catch (EscPosConnectionException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                     }
                 }
@@ -228,28 +254,38 @@ public class MainActivity extends AppCompatActivity {
         final EditText portAddress = (EditText) this.findViewById(R.id.edittext_tcp_port);
 
         try {
-            new AsyncTcpEscPosPrint(
-                this,
-                new AsyncEscPosPrint.OnPrintFinished() {
-                    @Override
-                    public void onError(AsyncEscPosPrinter asyncEscPosPrinter, int codeException) {
-                        Log.e("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : An error occurred !");
-                    }
+            try {
+                new AsyncTcpEscPosPrint(
+                    this,
+                    new AsyncEscPosPrint.OnPrintFinished() {
+                        @Override
+                        public void onError(AsyncEscPosPrinter asyncEscPosPrinter, int codeException) {
+                            Log.e("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : An error occurred !");
+                        }
 
-                    @Override
-                    public void onSuccess(AsyncEscPosPrinter asyncEscPosPrinter) {
-                        Log.i("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : Print is finished !");
+                        @Override
+                        public void onSuccess(AsyncEscPosPrinter asyncEscPosPrinter) {
+                            Log.i("Async.OnPrintFinished", "AsyncEscPosPrint.OnPrintFinished : Print is finished !");
+                        }
                     }
-                }
-            )
-                .execute(
-                    this.getAsyncEscPosPrinter(
-                        new TcpConnection(
-                            ipAddress.getText().toString(),
-                            Integer.parseInt(portAddress.getText().toString())
+                )
+                    .execute(
+                        this.getAsyncEscPosPrinter(
+                            new TcpConnection(
+                                ipAddress.getText().toString(),
+                                Integer.parseInt(portAddress.getText().toString())
+                            )
                         )
-                    )
-                );
+                    );
+            } catch (EscPosEncodingException e) {
+                throw new RuntimeException(e);
+            } catch (EscPosBarcodeException e) {
+                throw new RuntimeException(e);
+            } catch (EscPosParserException e) {
+                throw new RuntimeException(e);
+            } catch (EscPosConnectionException e) {
+                throw new RuntimeException(e);
+            }
         } catch (NumberFormatException e) {
             new AlertDialog.Builder(this)
                 .setTitle("Invalid TCP port address")
@@ -267,9 +303,10 @@ public class MainActivity extends AppCompatActivity {
      * Asynchronous printing
      */
     @SuppressLint("SimpleDateFormat")
-    public AsyncEscPosPrinter getAsyncEscPosPrinter(DeviceConnection printerConnection) {
+    public AsyncEscPosPrinter getAsyncEscPosPrinter(DeviceConnection printerConnection) throws EscPosEncodingException, EscPosBarcodeException, EscPosParserException, EscPosConnectionException {
         SimpleDateFormat format = new SimpleDateFormat("'on' yyyy-MM-dd 'at' HH:mm:ss");
         AsyncEscPosPrinter printer = new AsyncEscPosPrinter(printerConnection, 203, 48f, 32);
+
         return printer.addTextToPrint(
             "[C]<img>" + PrinterTextParserImg.bitmapToHexadecimalString(printer, this.getApplicationContext().getResources().getDrawableForDensity(R.drawable.logo, DisplayMetrics.DENSITY_MEDIUM)) + "</img>\n" +
                 "[L]\n" +
